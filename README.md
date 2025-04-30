@@ -1,1 +1,0 @@
-# forecast-widget

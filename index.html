@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Weekly Weather Forecast</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #e0f7fa;
+      margin: 0;
+      padding: 20px;
+    }
+    h2 {
+      text-align: center;
+    }
+    .forecast-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+    }
+    .forecast-day {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 10px;
+      width: 130px;
+      text-align: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .forecast-day img {
+      width: 48px;
+      height: 48px;
+    }
+    .forecast-day h4 {
+      margin: 5px 0;
+    }
+    .forecast-day p {
+      margin: 4px 0;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Weekly Weather Forecast</h2>
+  <div class="forecast-container" id="weekly-weather">Loading...</div>
+
+  <script>
+    const apiKey = '3GH6RXg9tlJGlOGgQdBZ5G9VTC5S1AQc'; // Replace with your real AccuWeather API key
+    const locationKey = '347936';  // Example: City
+
+    fetch(`https://dataservice.accuweather.com/forecasts/v1/daily/5day/${locationKey}?apikey=${apiKey}&language=en&metric=true`)
+      .then(res => res.json())
+      .then(data => {
+        const container = document.getElementById('weekly-weather');
+        container.innerHTML = '';
+        data.DailyForecasts.forEach(day => {
+          const date = new Date(day.Date);
+          const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
+          const min = day.Temperature.Minimum.Value;
+          const max = day.Temperature.Maximum.Value;
+          const description = day.Day.IconPhrase;
+          const iconNum = String(day.Day.Icon).padStart(2, '0');
+          const iconUrl = `https://developer.accuweather.com/sites/default/files/${iconNum}-s.png`;
+
+          const card = document.createElement('div');
+          card.className = 'forecast-day';
+          card.innerHTML = `
+            <h4>${weekday}</h4>
+            <img src="${iconUrl}" alt="${description}" />
+            <p>${description}</p>
+            <p><strong>${min}°C - ${max}°C</strong></p>
+          `;
+          container.appendChild(card);
+        });
+      })
+      .catch(error => {
+        document.getElementById('weekly-weather').textContent = 'Failed to load weather data.';
+        console.error(error);
+      });
+  </script>
+
+</body>
+</html>
