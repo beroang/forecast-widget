@@ -1,84 +1,111 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Weekly Weather Forecast</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Clima semanal — Sydney, Australia</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #e0f7fa;
-      margin: 0;
-      padding: 20px;
-    }
-    h2 {
-      text-align: center;
-    }
-    .forecast-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 15px;
-      justify-content: center;
-    }
-    .forecast-day {
-      background: #ffffff;
-      border-radius: 10px;
-      padding: 10px;
-      width: 130px;
-      text-align: center;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    .forecast-day img {
-      width: 48px;
-      height: 48px;
-    }
-    .forecast-day h4 {
-      margin: 5px 0;
-    }
-    .forecast-day p {
-      margin: 4px 0;
-      font-size: 14px;
-    }
+    :root{font-family:Inter,system-ui,Arial;margin:0;padding:0;color:#111}
+    body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(180deg,#e8f0ff,#fff);}
+    .container{width:100%;max-width:900px;padding:24px}
+    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    h1{font-size:1.25rem;margin:0}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+    .card{background:white;border-radius:12px;padding:12px;box-shadow:0 6px 18px rgba(16,24,40,0.06);text-align:center}
+    .date{font-weight:600;margin-bottom:6px}
+    .temp{font-size:1.1rem;margin:6px 0}
+    .desc{font-size:.9rem;color:#555}
+    .loader{padding:24px;text-align:center;color:#666}
+    footer{margin-top:14px;font-size:.85rem;color:#444}
   </style>
 </head>
 <body>
+  <div class="container">
+    <header>
+      <h1>Clima semanal — Sydney, Australia</h1>
+      <div id="update">Cargando...</div>
+    </header>
 
-  <h2>Weekly Weather Forecast</h2>
-  <div class="forecast-container" id="weekly-weather">Loading...</div>
+    <div id="content">
+      <div class="loader">Obteniendo datos del servicio meteorológico...</div>
+    </div>
 
-  <script>
-    const apiKey = '3GH6RXg9tlJGlOGgQdBZ5G9VTC5S1AQc'; // Replace with your real AccuWeather API key
-    const locationKey = '347936';  // Example: City
+    <footer>
+      Datos proporcionados por Open-Meteo (sin clave). Coordenadas usadas: lat -33.8688, lon 151.2093 (Sydney). 
+      Puedes abrir este archivo localmente o alojarlo en GitHub Pages.
+    </footer>
+  </div>
 
-    fetch(`https://dataservice.accuweather.com/forecasts/v1/daily/5day/${locationKey}?apikey=${apiKey}&language=en&metric=true`)
-      .then(res => res.json())
-      .then(data => {
-        const container = document.getElementById('weekly-weather');
-        container.innerHTML = '';
-        data.DailyForecasts.forEach(day => {
-          const date = new Date(day.Date);
-          const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
-          const min = day.Temperature.Minimum.Value;
-          const max = day.Temperature.Maximum.Value;
-          const description = day.Day.IconPhrase;
-          const iconNum = String(day.Day.Icon).padStart(2, '0');
-          const iconUrl = `https://developer.accuweather.com/sites/default/files/${iconNum}-s.png`;
+<script>
+  // Coordenadas de Sydney
+  const lat = -33.8688;
+  const lon = 151.2093;
+  const timezone = 'Australia/Sydney';
 
-          const card = document.createElement('div');
-          card.className = 'forecast-day';
-          card.innerHTML = `
-            <h4>${weekday}</h4>
-            <img src="${iconUrl}" alt="${description}" />
-            <p>${description}</p>
-            <p><strong>${min}°C - ${max}°C</strong></p>
-          `;
-          container.appendChild(card);
-        });
-      })
-      .catch(error => {
-        document.getElementById('weekly-weather').textContent = 'Failed to load weather data.';
-        console.error(error);
-      });
-  </script>
+  // Endpoint Open-Meteo (no se requiere API key)
+  const endpoint = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=${encodeURIComponent(timezone)}&forecast_days=7`;
 
+  function weatherCodeToText(code){
+    if(code === 0) return 'Cielo despejado';
+    if(code === 1 || code === 2 || code === 3) return 'Parcialmente nublado';
+    if(code >= 45 && code <= 48) return 'Niebla';
+    if(code >= 51 && code <= 67) return 'Lluvias ligeras/moderadas';
+    if(code >= 71 && code <= 77) return 'Nieve / Granizo';
+    if(code >= 80 && code <= 82) return 'Lluvias (chubascos)';
+    if(code >= 85 && code <= 86) return 'Nevadas';
+    if(code >= 95 && code <= 99) return 'Tormenta';
+    return 'Condiciones variables';
+  }
+
+  async function fetchWeather(){
+    try{
+      const res = await fetch(endpoint);
+      if(!res.ok) throw new Error('Error al obtener datos: '+res.status);
+      const data = await res.json();
+
+      const dates = data.daily.time;
+      const tmax = data.daily.temperature_2m_max;
+      const tmin = data.daily.temperature_2m_min;
+      const codes = data.daily.weathercode;
+
+      renderCards(dates, tmax, tmin, codes);
+
+      const updatedAt = new Date().toLocaleString();
+      document.getElementById('update').textContent = `Última actualización: ${updatedAt}`;
+    }catch(err){
+      document.getElementById('content').innerHTML = `<div class="loader">No se pudo obtener datos: ${err.message}</div>`;
+      document.getElementById('update').textContent = 'Error al actualizar';
+      console.error(err);
+    }
+  }
+
+  function renderCards(dates, tmax, tmin, codes){
+    const container = document.createElement('div');
+    container.className = 'cards';
+
+    for(let i=0;i<dates.length;i++){
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const date = new Date(dates[i]);
+      const weekday = date.toLocaleDateString('es-ES', {weekday:'short', day:'numeric', month:'short'});
+
+      card.innerHTML = `
+        <div class="date">${weekday}</div>
+        <div class="desc">${weatherCodeToText(codes[i])}</div>
+        <div class="temp">Máx ${Math.round(tmax[i])}°C · Mín ${Math.round(tmin[i])}°C</div>
+      `;
+
+      container.appendChild(card);
+    }
+
+    const content = document.getElementById('content');
+    content.innerHTML = '';
+    content.appendChild(container);
+  }
+
+  fetchWeather();
+  setInterval(fetchWeather, 30 * 60 * 1000);
+</script>
 </body>
 </html>
