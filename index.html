@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Clima semanal — Sydney, Australia</title>
+  <title>Weekly Weather — Sydney, Australia</title>
   <style>
     :root{font-family:Inter,system-ui,Arial;margin:0;padding:0;color:#111}
     body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(180deg,#e8f0ff,#fff);}
@@ -22,45 +22,45 @@
 <body>
   <div class="container">
     <header>
-      <h1>Clima semanal — Sydney, Australia</h1>
-      <div id="update">Cargando...</div>
+      <h1>Weekly Weather — Sydney, Australia</h1>
+      <div id="update">Loading...</div>
     </header>
 
     <div id="content">
-      <div class="loader">Obteniendo datos del servicio meteorológico...</div>
+      <div class="loader">Fetching data from the weather service...</div>
     </div>
 
     <footer>
-      Datos proporcionados por Open-Meteo (sin clave). Coordenadas usadas: lat -33.8688, lon 151.2093 (Sydney). 
-      Puedes abrir este archivo localmente o alojarlo en GitHub Pages.
+      Data provided by Open-Meteo (no API key required). Coordinates used: lat -33.8688, lon 151.2093 (Sydney).  
+      You can open this file locally or host it on GitHub Pages.
     </footer>
   </div>
 
 <script>
-  // Coordenadas de Sydney
+  // Sydney coordinates
   const lat = -33.8688;
   const lon = 151.2093;
   const timezone = 'Australia/Sydney';
 
-  // Endpoint Open-Meteo (no se requiere API key)
+  // Open-Meteo endpoint (no API key required)
   const endpoint = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=${encodeURIComponent(timezone)}&forecast_days=7`;
 
   function weatherCodeToText(code){
-    if(code === 0) return 'Cielo despejado';
-    if(code === 1 || code === 2 || code === 3) return 'Parcialmente nublado';
-    if(code >= 45 && code <= 48) return 'Niebla';
-    if(code >= 51 && code <= 67) return 'Lluvias ligeras/moderadas';
-    if(code >= 71 && code <= 77) return 'Nieve / Granizo';
-    if(code >= 80 && code <= 82) return 'Lluvias (chubascos)';
-    if(code >= 85 && code <= 86) return 'Nevadas';
-    if(code >= 95 && code <= 99) return 'Tormenta';
-    return 'Condiciones variables';
+    if(code === 0) return 'Clear sky';
+    if(code === 1 || code === 2 || code === 3) return 'Partly cloudy';
+    if(code >= 45 && code <= 48) return 'Fog';
+    if(code >= 51 && code <= 67) return 'Light/Moderate rain';
+    if(code >= 71 && code <= 77) return 'Snow / Hail';
+    if(code >= 80 && code <= 82) return 'Rain showers';
+    if(code >= 85 && code <= 86) return 'Snow showers';
+    if(code >= 95 && code <= 99) return 'Thunderstorm';
+    return 'Variable conditions';
   }
 
   async function fetchWeather(){
     try{
       const res = await fetch(endpoint);
-      if(!res.ok) throw new Error('Error al obtener datos: '+res.status);
+      if(!res.ok) throw new Error('Error fetching data: '+res.status);
       const data = await res.json();
 
       const dates = data.daily.time;
@@ -71,10 +71,10 @@
       renderCards(dates, tmax, tmin, codes);
 
       const updatedAt = new Date().toLocaleString();
-      document.getElementById('update').textContent = `Última actualización: ${updatedAt}`;
+      document.getElementById('update').textContent = `Last update: ${updatedAt}`;
     }catch(err){
-      document.getElementById('content').innerHTML = `<div class="loader">No se pudo obtener datos: ${err.message}</div>`;
-      document.getElementById('update').textContent = 'Error al actualizar';
+      document.getElementById('content').innerHTML = `<div class="loader">Failed to fetch data: ${err.message}</div>`;
+      document.getElementById('update').textContent = 'Update error';
       console.error(err);
     }
   }
@@ -88,12 +88,12 @@
       card.className = 'card';
 
       const date = new Date(dates[i]);
-      const weekday = date.toLocaleDateString('es-ES', {weekday:'short', day:'numeric', month:'short'});
+      const weekday = date.toLocaleDateString('en-US', {weekday:'short', day:'numeric', month:'short'});
 
       card.innerHTML = `
         <div class="date">${weekday}</div>
         <div class="desc">${weatherCodeToText(codes[i])}</div>
-        <div class="temp">Máx ${Math.round(tmax[i])}°C · Mín ${Math.round(tmin[i])}°C</div>
+        <div class="temp">High ${Math.round(tmax[i])}°C · Low ${Math.round(tmin[i])}°C</div>
       `;
 
       container.appendChild(card);
@@ -105,7 +105,7 @@
   }
 
   fetchWeather();
-  setInterval(fetchWeather, 30 * 60 * 1000);
+  setInterval(fetchWeather, 30 * 60 * 1000); // update every 30 min
 </script>
 </body>
 </html>
