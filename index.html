@@ -10,11 +10,12 @@
     .container{width:100%;max-width:900px;padding:24px}
     header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
     h1{font-size:1.25rem;margin:0}
-    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
-    .card{background:white;border-radius:12px;padding:12px;box-shadow:0 6px 18px rgba(16,24,40,0.06);text-align:center}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+    .card{background:white;border-radius:12px;padding:16px;box-shadow:0 6px 18px rgba(16,24,40,0.06);text-align:center}
     .date{font-weight:600;margin-bottom:6px}
     .temp{font-size:1.1rem;margin:6px 0}
     .desc{font-size:.9rem;color:#555}
+    .icon{width:48px;height:48px;margin:6px auto}
     .loader{padding:24px;text-align:center;color:#666}
     footer{margin-top:14px;font-size:.85rem;color:#444}
   </style>
@@ -31,30 +32,29 @@
     </div>
 
     <footer>
-      Data provided by Open-Meteo (no API key required). Coordinates used: lat -33.8688, lon 151.2093 (Sydney).  
+      Data provided by Open-Meteo (no API key required). Coordinates: lat -33.8688, lon 151.2093 (Sydney).  
       You can open this file locally or host it on GitHub Pages.
     </footer>
   </div>
 
 <script>
-  // Sydney coordinates
   const lat = -33.8688;
   const lon = 151.2093;
   const timezone = 'Australia/Sydney';
 
-  // Open-Meteo endpoint (no API key required)
   const endpoint = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=${encodeURIComponent(timezone)}&forecast_days=7`;
 
-  function weatherCodeToText(code){
-    if(code === 0) return 'Clear sky';
-    if(code === 1 || code === 2 || code === 3) return 'Partly cloudy';
-    if(code >= 45 && code <= 48) return 'Fog';
-    if(code >= 51 && code <= 67) return 'Light/Moderate rain';
-    if(code >= 71 && code <= 77) return 'Snow / Hail';
-    if(code >= 80 && code <= 82) return 'Rain showers';
-    if(code >= 85 && code <= 86) return 'Snow showers';
-    if(code >= 95 && code <= 99) return 'Thunderstorm';
-    return 'Variable conditions';
+  // Map weather codes to text + icons
+  function weatherCodeToInfo(code){
+    if(code === 0) return {text:'Clear sky', icon:'☀️'};
+    if(code === 1 || code === 2 || code === 3) return {text:'Partly cloudy', icon:'🌤️'};
+    if(code >= 45 && code <= 48) return {text:'Fog', icon:'🌫️'};
+    if(code >= 51 && code <= 67) return {text:'Light/Moderate rain', icon:'🌦️'};
+    if(code >= 71 && code <= 77) return {text:'Snow / Hail', icon:'❄️'};
+    if(code >= 80 && code <= 82) return {text:'Rain showers', icon:'🌧️'};
+    if(code >= 85 && code <= 86) return {text:'Snow showers', icon:'🌨️'};
+    if(code >= 95 && code <= 99) return {text:'Thunderstorm', icon:'⛈️'};
+    return {text:'Variable conditions', icon:'🌍'};
   }
 
   async function fetchWeather(){
@@ -90,9 +90,12 @@
       const date = new Date(dates[i]);
       const weekday = date.toLocaleDateString('en-US', {weekday:'short', day:'numeric', month:'short'});
 
+      const info = weatherCodeToInfo(codes[i]);
+
       card.innerHTML = `
         <div class="date">${weekday}</div>
-        <div class="desc">${weatherCodeToText(codes[i])}</div>
+        <div class="icon">${info.icon}</div>
+        <div class="desc">${info.text}</div>
         <div class="temp">High ${Math.round(tmax[i])}°C · Low ${Math.round(tmin[i])}°C</div>
       `;
 
